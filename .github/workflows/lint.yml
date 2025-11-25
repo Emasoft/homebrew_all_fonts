@@ -1,0 +1,51 @@
+name: Lint Cask
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    
+    - name: Check Ruby syntax
+      run: ruby -c homebrew-all-fonts.rb
+    
+    - name: Install rubocop
+      run: brew install rubocop
+    
+    - name: Run rubocop
+      run: rubocop homebrew-all-fonts.rb --fail-level warning
+      continue-on-error: true
+    
+    - name: Validate cask structure
+      run: |
+        echo "Checking for required cask components..."
+        grep -q "cask \"homebrew-all-fonts\"" homebrew-all-fonts.rb
+        grep -q "version" homebrew-all-fonts.rb
+        grep -q "url" homebrew-all-fonts.rb
+        grep -q "name" homebrew-all-fonts.rb
+        grep -q "desc" homebrew-all-fonts.rb
+        grep -q "homepage" homebrew-all-fonts.rb
+        echo "✓ All required components present"
+    
+    - name: Check for sensitive data
+      run: |
+        echo "Scanning for potential sensitive data..."
+        ! grep -E "(password|secret|api_key|token|/Users/[^/]+/)" homebrew-all-fonts.rb || exit 1
+        echo "✓ No sensitive data found"
+    
+    - name: Verify API URL
+      run: |
+        echo "Verifying Homebrew API URL is accessible..."
+        curl -f -s -o /dev/null https://formulae.brew.sh/api/cask.json
+        echo "✓ API URL is accessible"

@@ -1,0 +1,85 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Homebrew
+*.tar.gz
+*.zip
+*.dmg
+*.pkg
+
+# Large JSON files (can be re-downloaded)
+cask.json
+fonts_casks.json
+fonts_filtered.json
+fonts.json
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+\#*\#
+.#*
+
+# Logs
+*.log
+
+# Editor directories and files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Backup files
+*.bak
+*.backup
+*_old.*
+*_OLD.*
+README_old.md
+
+# Test files
+test_*.txt
+debug_*.txt
+
+# Build artifacts
+build/
+dist/
+*.gem
+*.rbc
+
+# Bundler
+.bundle/
+vendor/bundle/
+Gemfile.lock
+
+# Generated files
+.rake_tasks
+tags
+
+# Custom
+homebrew-fonts-package.zip
+Brewfile.all-fonts.*
+installed_fonts.txt
+all_fonts_installer.sh
+Brewfile.fonts
+
+# Keep example invalid fonts list
+# invalid_brew_fonts_list_*.txt

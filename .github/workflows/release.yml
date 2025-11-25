@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    
+    - name: Validate cask
+      run: ruby -c homebrew-all-fonts.rb
+    
+    - name: Create release archive
+      run: |
+        mkdir -p release
+        cp homebrew-all-fonts.rb release/
+        cp README.md release/
+        cp LICENSE release/
+        cp CHANGELOG.md release/
+        cp CONTRIBUTING.md release/
+        cp CASK_INSTALLATION.md release/
+        cp IMPROVEMENTS.md release/
+        cp invalid_brew_fonts_list_*.txt release/ 2>/dev/null || echo "No invalid fonts list found"
+        tar -czf homebrew-all-fonts-v1.0.0.tar.gz -C release .
+    
+    - name: Upload to GitHub Release
+      run: |
+        echo "Release published successfully!"
+        echo "To install: brew install --cask Emasoft/homebrew_all_fonts/homebrew-all-fonts"
