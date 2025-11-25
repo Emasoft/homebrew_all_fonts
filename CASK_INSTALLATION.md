@@ -21,27 +21,33 @@ A custom Homebrew cask that dynamically downloads and installs all available fon
 
 ## Installation
 
-### Method 1: Direct Installation (Recommended)
+### Method 1: Via Personal Tap (Recommended)
+
+```bash
+# Tap the repository (one-time setup)
+brew tap Emasoft/tools
+
+# Install the cask
+brew install --cask homebrew-all-fonts
+```
+
+**Benefits:**
+- ✅ Short, memorable command
+- ✅ Automatic updates via `brew upgrade`
+- ✅ Searchable with `brew search Emasoft`
+
+### Method 2: Direct URL Installation
+
+```bash
+# Install directly from GitHub URL
+brew install --cask https://raw.githubusercontent.com/Emasoft/homebrew_all_fonts/main/homebrew-all-fonts.rb
+```
+
+### Method 3: Local Installation
 
 ```bash
 # Install from local cask file
 brew install --cask homebrew-all-fonts.rb
-```
-
-### Method 2: Add to Homebrew Tap (Advanced)
-
-If you want to create a custom tap:
-
-```bash
-# Create a tap repository
-mkdir -p ~/homebrew-custom-tap/Casks
-cp homebrew-all-fonts.rb ~/homebrew-custom-tap/Casks/
-
-# Tap it
-brew tap yourusername/custom-tap ~/homebrew-custom-tap
-
-# Install
-brew install --cask homebrew-all-fonts
 ```
 
 ## Usage

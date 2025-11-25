@@ -29,13 +29,30 @@ A smart Homebrew cask that automatically installs all available font casks from 
 
 ## Installation
 
-### Quick Install
+### Recommended: Via Personal Tap
 
 ```bash
-brew install --cask Emasoft/homebrew_all_fonts/homebrew-all-fonts
+# Tap the repository (one-time setup)
+brew tap Emasoft/tools
+
+# Install the cask
+brew install --cask homebrew-all-fonts
 ```
 
-### From GitHub
+**Benefits:**
+- ✅ Short, memorable command
+- ✅ Automatic updates via `brew upgrade`
+- ✅ Searchable with `brew search Emasoft`
+- ✅ Professional installation experience
+
+### Alternative: Direct URL
+
+```bash
+# Install directly from GitHub URL
+brew install --cask https://raw.githubusercontent.com/Emasoft/homebrew_all_fonts/main/homebrew-all-fonts.rb
+```
+
+### Alternative: Clone and Install
 
 ```bash
 # Clone the repository
