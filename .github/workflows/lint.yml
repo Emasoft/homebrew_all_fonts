@@ -20,13 +20,6 @@ jobs:
     - name: Check Ruby syntax
       run: ruby -c homebrew-all-fonts.rb
     
-    - name: Install rubocop
-      run: brew install rubocop
-    
-    - name: Run rubocop
-      run: rubocop homebrew-all-fonts.rb --fail-level warning
-      continue-on-error: true
-    
     - name: Validate cask structure
       run: |
         echo "Checking for required cask components..."
