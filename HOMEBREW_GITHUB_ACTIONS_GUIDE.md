@@ -10,6 +10,9 @@ Complete guide for publishing and automating Homebrew packages (formulas and cas
 5. [Setting Up Personal Taps](#setting-up-personal-taps)
 6. [Best Practices](#best-practices)
 7. [Complete Workflow Examples](#complete-workflow-examples)
+8. [How to Write a Homebrew Cask](#how-to-write-a-homebrew-cask)
+9. [Publishing to Official Homebrew](#publishing-to-official-homebrew)
+10. [Real-World Implementation: homebrew_all_fonts](#real-world-implementation-homebrew_all_fonts)
 
 ---
 
@@ -524,6 +527,547 @@ git tag v1.2.3
 - [Homebrew Cask Cookbook](https://docs.brew.sh/Cask-Cookbook)
 - [Homebrew Taps](https://docs.brew.sh/Taps)
 - [GitHub Actions Best Practices](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
+
+---
+
+## How to Write a Homebrew Cask
+
+### Basic Cask Structure
+
+A Homebrew cask is a Ruby DSL (Domain Specific Language) file that defines how to install an application or font.
+
+#### Minimal Cask Example
+
+```ruby
+cask "my-app" do
+  version "1.0.0"
+  sha256 "abc123..."
+
+  url "https://example.com/downloads/MyApp-#{version}.dmg"
+  name "My Application"
+  desc "Short description of what this app does"
+  homepage "https://example.com"
+
+  app "MyApp.app"
+end
+```
+
+#### Font Cask Example
+
+```ruby
+cask "font-my-font" do
+  version "2.1.0"
+  sha256 "def456..."
+
+  url "https://github.com/user/my-font/releases/download/v#{version}/MyFont.zip"
+  name "My Font"
+  desc "Beautiful custom font family"
+  homepage "https://github.com/user/my-font"
+
+  font "MyFont-Regular.ttf"
+  font "MyFont-Bold.ttf"
+  font "MyFont-Italic.ttf"
+end
+```
+
+### Required Stanzas
+
+Every cask must have these components:
+
+1. **cask "name"** - Unique identifier (lowercase, hyphens only)
+2. **version** - Software version (use `:latest` if no versioning)
+3. **url** - Download URL (can use `#{version}` interpolation)
+4. **name** - Human-readable name
+5. **desc** - One-line description
+6. **homepage** - Official website or repository
+
+### Common Stanzas
+
+#### Application Installation
+
+```ruby
+# GUI application
+app "MyApp.app"
+
+# Command-line tool
+binary "usr/local/bin/mytool"
+
+# Preference pane
+prefpane "MyPref.prefPane"
+
+# QuickLook plugin
+qlplugin "MyQLPlugin.qlgenerator"
+
+# Safari extension
+artifact "MyExtension.safariextz", target: "#{Dir.home}/Library/Safari/Extensions/MyExtension.safariextz"
+```
+
+#### Fonts
+
+```ruby
+# Single font
+font "MyFont.ttf"
+
+# Multiple fonts
+font "fonts/MyFont-Regular.ttf"
+font "fonts/MyFont-Bold.ttf"
+```
+
+#### SHA256 Checksum
+
+```ruby
+# Specific checksum (recommended)
+sha256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+# No checksum verification (discouraged)
+sha256 :no_check
+```
+
+#### Version Detection
+
+```ruby
+# Use livecheck to auto-detect new versions
+livecheck do
+  url "https://api.github.com/repos/user/repo/releases/latest"
+  strategy :github_latest
+end
+```
+
+### Advanced Stanzas
+
+#### Installation Hooks
+
+```ruby
+# Run code before installation
+preflight do
+  system_command "/usr/bin/killall", args: ["MyApp"]
+end
+
+# Run code after installation
+postflight do
+  system_command "#{appdir}/MyApp.app/Contents/MacOS/setup"
+end
+
+# Run code before uninstallation
+uninstall_preflight do
+  system_command "#{appdir}/MyApp.app/Contents/MacOS/cleanup"
+end
+
+# Run code after uninstallation
+uninstall_postflight do
+  system_command "/usr/bin/defaults", args: ["delete", "com.example.MyApp"]
+end
+```
+
+#### Complex Uninstallation
+
+```ruby
+uninstall quit:      "com.example.MyApp",
+          delete:    "/Applications/MyApp.app",
+          pkgutil:   "com.example.MyApp.*",
+          launchctl: [
+            "com.example.MyApp.agent",
+            "com.example.MyApp.daemon"
+          ]
+```
+
+#### Caveats (User Messages)
+
+```ruby
+caveats <<~EOS
+  Additional setup required:
+
+  1. Open System Preferences → Security & Privacy
+  2. Allow MyApp to run
+  3. Restart your computer
+
+  For more information: https://example.com/setup
+EOS
+```
+
+#### Architecture-Specific URLs
+
+```ruby
+if Hardware::CPU.intel?
+  url "https://example.com/MyApp-Intel.dmg"
+  sha256 "abc123..."
+else
+  url "https://example.com/MyApp-AppleSilicon.dmg"
+  sha256 "def456..."
+end
+```
+
+### Meta-Cask Example (Dynamic Installation)
+
+```ruby
+cask "homebrew-all-fonts" do
+  version "1.0.0"
+  sha256 :no_check
+
+  url "https://formulae.brew.sh/api/cask.json"
+  name "Homebrew All Fonts"
+  desc "Installs all available Homebrew font casks"
+  homepage "https://github.com/Emasoft/homebrew_all_fonts"
+
+  depends_on formula: "jq"
+
+  preflight do
+    require "open3"
+    require "json"
+
+    # Download and parse cask list
+    cask_json = File.read(staged_path / "cask.json")
+    casks = JSON.parse(cask_json)
+
+    # Filter for fonts
+    fonts = casks.select { |c| c["ruby_source_path"]&.include?("Casks/font/") }
+
+    # Install fonts
+    fonts.each do |font|
+      system "brew", "install", "--cask", font["token"]
+    end
+  end
+
+  # No actual artifact to install
+  caveats "All fonts have been installed to ~/Library/Fonts/"
+end
+```
+
+### Cask Naming Conventions
+
+#### Application Casks
+- Use lowercase with hyphens: `my-app`
+- Remove spaces: `My App` → `my-app`
+- Remove special characters: `My App!` → `my-app`
+
+#### Font Casks
+- Must start with `font-`: `font-my-font`
+- Family name: `font-roboto`
+- Variant: `font-roboto-mono`
+
+### Testing Your Cask
+
+```bash
+# Check Ruby syntax
+ruby -c my-cask.rb
+
+# Audit the cask
+brew audit --cask my-cask.rb
+
+# Strict audit (before submitting)
+brew audit --strict --online --cask my-cask.rb
+
+# Style check
+brew style my-cask.rb
+
+# Test installation
+brew install --cask my-cask.rb
+
+# Test uninstallation
+brew uninstall --cask my-cask
+```
+
+### Common Mistakes to Avoid
+
+❌ **Wrong:**
+```ruby
+# Using spaces in cask name
+cask "My App" do
+
+# No version
+cask "my-app" do
+  url "https://example.com/app.dmg"
+
+# Hardcoded paths
+app "/Applications/MyApp.app"
+
+# Missing sha256
+cask "my-app" do
+  version "1.0.0"
+  url "https://example.com/app.dmg"
+```
+
+✅ **Correct:**
+```ruby
+# Lowercase with hyphens
+cask "my-app" do
+
+# Always include version
+cask "my-app" do
+  version "1.0.0"
+
+# Relative paths
+app "MyApp.app"
+
+# Include sha256
+cask "my-app" do
+  version "1.0.0"
+  sha256 "abc123..."
+```
+
+---
+
+## Publishing to Official Homebrew
+
+### Overview
+
+Homebrew has two official taps for casks:
+- **homebrew-cask**: GUI applications, fonts, plugins
+- **homebrew-core**: Command-line tools (formulas)
+
+**Important:** Meta-casks and bulk installers are **NOT** accepted in official taps.
+
+### Acceptance Requirements
+
+#### 1. Repository Notability
+
+Your project repository must meet these thresholds:
+
+✅ **Required:**
+- ≥30 forks
+- ≥30 watchers
+- ≥75 stars
+
+**Check your stats:**
+```bash
+gh repo view user/repo --json forkCount,watchers,stargazerCount
+```
+
+#### 2. Software Requirements
+
+✅ **Must be:**
+- Stable release (not beta/alpha/pre-release)
+- Actively maintained
+- Runs on latest macOS
+- Has legitimate public presence
+- Free from malware
+
+❌ **Cannot be:**
+- Pre-release or beta versions
+- Requires SIP (System Integrity Protection) disabled
+- Meta-installer or bulk installer
+- Discovery/cataloging tool
+- Interactive installer (requires user input during installation)
+
+#### 3. Cask Quality Standards
+
+✅ **Must pass:**
+```bash
+brew audit --strict --online --cask your-cask.rb
+brew style your-cask.rb
+```
+
+✅ **Must have:**
+- Proper Ruby syntax
+- All required stanzas (version, url, name, desc, homepage)
+- Valid sha256 checksum
+- Correct stanza order
+- No placeholder values
+- Accurate metadata
+
+### Step-by-Step Submission Process
+
+#### Step 1: Fork homebrew-cask
+
+```bash
+# Fork the repository
+gh repo fork Homebrew/homebrew-cask --clone=true
+
+# Navigate to your fork
+cd homebrew-cask
+```
+
+#### Step 2: Create Feature Branch
+
+```bash
+# Branch naming: add-cask-<name>
+git checkout -b add-cask-my-app
+```
+
+#### Step 3: Add Your Cask
+
+```bash
+# Casks are organized alphabetically in subdirectories
+# my-app → Casks/m/my-app.rb
+# font-roboto → Casks/f/font-roboto.rb
+
+# Create the cask file
+cp ~/my-app.rb Casks/m/my-app.rb
+```
+
+**Directory structure:**
+```
+Casks/
+├── a/  (casks starting with 'a')
+├── b/  (casks starting with 'b')
+├── m/  (casks starting with 'm')
+│   └── my-app.rb
+└── ...
+```
+
+#### Step 4: Test Locally
+
+```bash
+# Audit (strict mode)
+brew audit --strict --online --cask my-app
+
+# Style check
+brew style Casks/m/my-app.rb
+
+# Test installation
+brew install --cask my-app
+
+# Test uninstallation
+brew uninstall --cask my-app
+
+# Test reinstallation
+brew reinstall --cask my-app
+```
+
+#### Step 5: Commit Changes
+
+```bash
+# Add the file
+git add Casks/m/my-app.rb
+
+# Commit message format
+git commit -m "my-app 1.0.0 (new cask)
+
+Created with \`brew create --cask\`."
+```
+
+**Commit message format:**
+```
+<cask-name> <version> (new cask)
+
+Optional additional context.
+```
+
+**Examples:**
+```
+font-roboto 2.1.0 (new cask)
+
+my-app 1.0.0 (new cask)
+
+Created with `brew create --cask`.
+```
+
+#### Step 6: Push to Your Fork
+
+```bash
+git push origin add-cask-my-app
+```
+
+#### Step 7: Create Pull Request
+
+```bash
+gh pr create \
+  --repo Homebrew/homebrew-cask \
+  --title "Add my-app cask" \
+  --body "## Description
+
+New cask for My App - a productivity application.
+
+## Checklist
+
+- [x] \`brew audit --strict --online --cask my-app\` passes
+- [x] \`brew style Casks/m/my-app.rb\` passes
+- [x] Successfully installs on macOS Sequoia
+- [x] Successfully uninstalls without issues
+- [x] License is correctly specified
+- [x] Homepage is valid and accessible
+
+## Additional Notes
+
+Official download from https://example.com
+"
+```
+
+#### Step 8: Wait for Review
+
+**Typical timeline:** Days to weeks
+
+**Maintainers will check:**
+- Code quality and style
+- Audit results
+- License validity
+- Homepage accessibility
+- Installation/uninstallation behavior
+- Notability requirements
+
+**Be prepared to:**
+- Fix audit issues
+- Adjust cask structure
+- Update documentation
+- Respond to maintainer feedback
+
+### Why Meta-Casks Are Rejected
+
+**Official Homebrew philosophy:**
+> "Homebrew Cask is not a discoverability service"
+
+❌ **Reasons for rejection:**
+
+1. **Discovery tool conflict**
+   - Meta-casks help users discover packages
+   - Homebrew views this as out-of-scope
+   - Individual casks are preferred
+
+2. **Not a traditional application**
+   - Doesn't install specific software
+   - Installs other casks dynamically
+   - Violates single-purpose principle
+
+3. **User interaction required**
+   - Meta-casks often prompt for choices
+   - Official casks must be non-interactive
+   - Silent installation is required
+
+4. **Functional overlap**
+   - Users can already install individually
+   - `brew search` provides discovery
+   - Meta-casks seen as unnecessary
+
+### Expected Rejection Responses
+
+**Common maintainer feedback:**
+
+> "This appears to be a meta-cask that installs other casks. Homebrew-cask is not a discoverability service. Users should install individual font casks as needed."
+
+> "This cask requires user interaction during installation, which is not acceptable for official casks."
+
+> "This doesn't install a specific application or font. It's a utility script, which doesn't fit the cask model."
+
+### Alternative: Personal Tap (Recommended)
+
+If your cask won't be accepted officially, create a personal tap:
+
+**Benefits:**
+- ✅ Full control over content
+- ✅ No rejection risk
+- ✅ Easy updates for users
+- ✅ Professional appearance
+- ✅ Multiple casks in one tap
+
+**See "Setting Up Personal Taps" section for details.**
+
+### When Official Submission Makes Sense
+
+✅ **Submit if your cask:**
+- Installs a specific GUI application
+- Installs a specific font family
+- Is stable and actively maintained
+- Has sufficient repository stars/forks
+- Passes all audit checks
+- Doesn't require user interaction
+- Follows Homebrew philosophy
+
+❌ **Don't submit if:**
+- It's a meta-installer
+- It requires user prompts
+- It's a bulk installer
+- It's primarily a discovery tool
+- Repository doesn't meet notability thresholds
 
 ---
 
