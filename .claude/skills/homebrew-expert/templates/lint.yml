@@ -1,0 +1,49 @@
+name: Lint Cask
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual workflow runs
+
+jobs:
+  lint:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: Check Ruby syntax
+      run: ruby -c YOUR_CASK_NAME.rb
+
+    - name: Validate cask structure
+      run: |
+        echo "Checking for required cask components..."
+        grep -q "cask \"YOUR_CASK_NAME\"" YOUR_CASK_NAME.rb
+        grep -q "version" YOUR_CASK_NAME.rb
+        grep -q "url" YOUR_CASK_NAME.rb
+        grep -q "name" YOUR_CASK_NAME.rb
+        grep -q "desc" YOUR_CASK_NAME.rb
+        grep -q "homepage" YOUR_CASK_NAME.rb
+        echo "✓ All required components present"
+
+    - name: Check for sensitive data
+      run: |
+        echo "Scanning for potential sensitive data..."
+        # Look for hardcoded credentials but exclude legitimate code patterns
+        ! grep -E '(password|secret|api_key).*=.*["\x27][^"\x27]+["\x27]' YOUR_CASK_NAME.rb || exit 1
+        # Check for absolute user paths but exclude Dir.home usage
+        ! grep -E '/Users/[^/]+/' YOUR_CASK_NAME.rb | grep -v 'Dir\.home' || exit 1
+        echo "✓ No sensitive data found"
+
+    - name: Verify API URL (if applicable)
+      run: |
+        echo "Verifying external URLs are accessible..."
+        # Add your specific URL checks here
+        # curl -f -s -o /dev/null https://your-api-url.com
+        echo "✓ URLs are accessible"

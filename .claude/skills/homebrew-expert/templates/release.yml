@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: Validate cask
+      run: ruby -c YOUR_CASK_NAME.rb
+
+    - name: Create release archive
+      run: |
+        mkdir -p release
+        cp YOUR_CASK_NAME.rb release/
+        cp README.md release/
+        cp LICENSE release/
+        cp CHANGELOG.md release/
+        cp CONTRIBUTING.md release/
+        # Add other files as needed
+        tar -czf YOUR_CASK_NAME-${{ github.event.release.tag_name }}.tar.gz -C release .
+
+    - name: Display installation instructions
+      run: |
+        echo "========================================="
+        echo "Release published successfully!"
+        echo "========================================="
+        echo ""
+        echo "Users can install with:"
+        echo "  brew install --cask https://raw.githubusercontent.com/${{ github.repository }}/main/YOUR_CASK_NAME.rb"
+        echo ""
+        echo "Or via personal tap (if configured):"
+        echo "  brew tap YOUR_USERNAME/YOUR_TAP"
+        echo "  brew install --cask YOUR_CASK_NAME"
+        echo "========================================="

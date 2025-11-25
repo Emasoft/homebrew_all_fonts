@@ -1,0 +1,18 @@
+{
+  "name": "homebrew-expert",
+  "description": "Expert guidance for creating, publishing, and automating Homebrew packages (formulas and casks) with GitHub Actions. Use when user asks to create Homebrew casks/formulas, set up personal taps, configure CI/CD for Homebrew, publish to official Homebrew, create meta-casks, or troubleshoot Homebrew-related issues. Based on real-world implementation of homebrew_all_fonts project with working CI workflows and successful personal tap deployment.",
+  "version": "1.0.0",
+  "author": "Based on homebrew_all_fonts implementation",
+  "tags": [
+    "homebrew",
+    "cask",
+    "formula",
+    "github-actions",
+    "ci-cd",
+    "macos",
+    "package-manager",
+    "automation",
+    "tap",
+    "meta-cask"
+  ]
+}
