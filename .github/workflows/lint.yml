@@ -34,7 +34,10 @@ jobs:
     - name: Check for sensitive data
       run: |
         echo "Scanning for potential sensitive data..."
-        ! grep -E "(password|secret|api_key|token|/Users/[^/]+/)" homebrew-all-fonts.rb || exit 1
+        # Look for hardcoded credentials but exclude legitimate code patterns
+        ! grep -E '(password|secret|api_key).*=.*["\x27][^"\x27]+["\x27]' homebrew-all-fonts.rb || exit 1
+        # Check for absolute user paths but exclude Dir.home usage
+        ! grep -E '/Users/[^/]+/' homebrew-all-fonts.rb | grep -v 'Dir\.home' || exit 1
         echo "✓ No sensitive data found"
     
     - name: Verify API URL

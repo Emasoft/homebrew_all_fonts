@@ -31,7 +31,17 @@ jobs:
         cp invalid_brew_fonts_list_*.txt release/ 2>/dev/null || echo "No invalid fonts list found"
         tar -czf homebrew-all-fonts-v1.0.0.tar.gz -C release .
     
-    - name: Upload to GitHub Release
+    - name: Display installation instructions
       run: |
+        echo "========================================="
         echo "Release published successfully!"
-        echo "To install: brew install --cask Emasoft/homebrew_all_fonts/homebrew-all-fonts"
+        echo "========================================="
+        echo ""
+        echo "Users can install with:"
+        echo "  brew install --cask https://raw.githubusercontent.com/Emasoft/homebrew_all_fonts/main/homebrew-all-fonts.rb"
+        echo ""
+        echo "Or clone and install:"
+        echo "  git clone https://github.com/Emasoft/homebrew_all_fonts.git"
+        echo "  cd homebrew_all_fonts"
+        echo "  brew install --cask homebrew-all-fonts.rb"
+        echo "========================================="
